@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Tools Tester</title>
+    <!-- No CSS styling - pure HTML for testing -->
+</head>
+<body>
+
+    <h1>🧪 PDF Tools Tester</h1>
+    <p>Click any button below to load and test a PDF tool.</p>
+    <hr />
+
+    <!-- Tool selection buttons -->
+    <div id="toolbar">
+        <button data-tool="merge">📄 Merge</button>
+        <button data-tool="split">✂️ Split</button>
+        <button data-tool="extractPages">📑 Extract Pages</button>
+        <button data-tool="pdfToImage">🖼️ PDF to Image</button>
+        <button data-tool="imageToPdf">🖼️ Image to PDF</button>
+        <button data-tool="watermark">©️ Watermark</button>
+        <button data-tool="pageNumber">🔢 Page Number</button>
+        <button data-tool="encrypt">🔒 Encrypt</button>
+        <button data-tool="decrypt">🔓 Decrypt</button>
+        <button data-tool="compress">📦 Compress</button>
+    </div>
+
+    <hr />
+
+    <!-- Tool description & help section -->
+    <div id="toolDescription" style="border:1px solid #ccc; padding:10px; margin:10px 0; background:#f9f9f9; min-height:60px;">
+        <strong>📖 Description:</strong> <span id="descText">Click a button above.</span>
+        <br />
+        <strong>⚙️ How to use:</strong> <span id="helpText">-</span>
+    </div>
+
+    <hr />
+
+    <!-- Container where the tool will be rendered -->
+    <div id="toolContainer" style="border:2px dashed #aaa; padding:15px; margin-top:15px; min-height:300px;">
+        <p style="color:#888;">Selected tool will appear here...</p>
+    </div>
+
+    <script type="module">
+        // ================================================================
+        // CONFIGURATION
+        // ================================================================
+        // Change this URL to point to your actual PDF tools repository.
+        // For local testing, you can use a local relative path like:
+        //   const BASE_URL = '../991-pdftools/src/index.js';
+        // Or use the CDN version (if published):
+        const BASE_URL = '/src/index.js';
+
+        // ================================================================
+        // TOOL METADATA (descriptions & help text)
+        // ================================================================
+        const toolInfo = {
+            merge: {
+                desc: 'Merge multiple PDF files into one.',
+                help: 'Select at least 2 PDF files, then click "Merge".'
+            },
+            split: {
+                desc: 'Split a PDF into multiple files by ranges, every N pages, or odd/even.',
+                help: 'Select a PDF, choose split method, enter ranges, then click "Split".'
+            },
+            extractPages: {
+                desc: 'Extract specific pages from a PDF and create a new file.',
+                help: 'Select a PDF, enter page numbers/ranges (e.g. 1,3,5-7), then click "Extract".'
+            },
+            pdfToImage: {
+                desc: 'Convert each page of a PDF to an image (JPG or PNG).',
+                help: 'Select a PDF, choose format, quality, scale, then click "Convert".'
+            },
+            imageToPdf: {
+                desc: 'Convert multiple images into a single PDF (one image per page).',
+                help: 'Select at least one image, adjust page size & quality, then click "Convert".'
+            },
+            watermark: {
+                desc: 'Add a text or image watermark to all pages of a PDF.',
+                help: 'Select a PDF, choose watermark type (text/image), adjust settings, then click "Add Watermark".'
+            },
+            pageNumber: {
+                desc: 'Add page numbers to all pages of a PDF.',
+                help: 'Select a PDF, choose format, position, color, margin, then click "Add Page Numbers".'
+            },
+            encrypt: {
+                desc: 'Add password protection and permissions to a PDF.',
+                help: 'Select a PDF, enter a user password (and optional owner password), set permissions, then click "Encrypt".'
+            },
+            decrypt: {
+                desc: 'Remove password protection from a PDF (if you have the password).',
+                help: 'Select an encrypted PDF, enter the password, then click "Decrypt".'
+            },
+            compress: {
+                desc: 'Reduce PDF file size by compressing images.',
+                help: 'Select a PDF, adjust quality and scale, then click "Compress". (May take a moment.)'
+            }
+        };
+
+        // ================================================================
+        // DOM ELEMENTS
+        // ================================================================
+        const container = document.getElementById('toolContainer');
+        const descSpan = document.getElementById('descText');
+        const helpSpan = document.getElementById('helpText');
+        const buttons = document.querySelectorAll('[data-tool]');
+
+        // ================================================================
+        // LOAD AND RUN TOOL
+        // ================================================================
+        async function loadTool(toolName) {
+            // Update description & help
+            const info = toolInfo[toolName];
+            if (info) {
+                descSpan.textContent = info.desc;
+                helpSpan.textContent = info.help;
+            } else {
+                descSpan.textContent = 'No description available.';
+                helpSpan.textContent = '-';
+            }
+
+            // Show loading message
+            container.innerHTML = `<p style="color:#666;">⏳ Loading "${toolName}" ...</p>`;
+
+            try {
+                // Dynamically import from the CDN (or local path)
+                const module = await import(BASE_URL);
+                const toolFn = module[toolName];
+
+                if (typeof toolFn !== 'function') {
+                    throw new Error(`Tool "${toolName}" not found in module.`);
+                }
+
+                // Clear container and run the tool
+                container.innerHTML = '';
+                await toolFn(container);
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div style="color:red; padding:15px; border:1px solid red; background:#ffebee;">
+                        <strong>❌ Error loading tool:</strong><br />
+                        ${error.message}
+                        <br /><br />
+                        <small>
+                            Make sure the BASE_URL points to your PDF tools repository
+                            and that index.js exports all tools.
+                        </small>
+                    </div>
+                `;
+                console.error('Error loading tool:', error);
+            }
+        }
+
+        // ================================================================
+        // ATTACH EVENT LISTENERS TO BUTTONS
+        // ================================================================
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const toolName = btn.dataset.tool;
+                loadTool(toolName);
+            });
+        });
+
+        // ================================================================
+        // OPTIONAL: Auto-load a default tool on page start
+        // ================================================================
+        // Uncomment the line below to automatically load "merge" on page load:
+        // loadTool('merge');
+
+        console.log('✅ PDF Tools Tester ready.');
+        console.log('👉 Click any button to test a tool.');
+    </script>
+
+</body>
+</html>
